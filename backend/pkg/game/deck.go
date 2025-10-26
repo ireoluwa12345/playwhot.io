@@ -8,6 +8,7 @@ fillDeck
 
 */
 
+// Card suits and deck configuration constants
 const (
 	SuitCircle     = "circle"
 	SuitTriangle   = "triangle"
@@ -19,10 +20,22 @@ const (
 	WhotCardNumber = 4
 )
 
+// Special card types for Whot game mechanics
+type SpecialType string
+
+const (
+	SpecialHoldOn     SpecialType = "hold_on"
+	SpecialPickTwo    SpecialType = "pick_two"
+	SpecialPickThree  SpecialType = "pick_three"
+	SpecialSuspension SpecialType = "suspension"
+)
+
 type Card struct {
-	Suit   string `json:"suit"`
-	Number string `json:"number"`
-	Whot   bool   `json:"whot"`
+	Suit        string `json:"suit"`
+	Number      string `json:"number"`
+	Whot        bool   `json:"whot"`
+	SpecialType string `json:"special_type"`
+	Value       int    `json:"value"`
 }
 
 type SuitCards struct {
@@ -102,4 +115,16 @@ func (d *Deck) Deal(count int) []Card {
 
 func (d *Deck) Remaining() int {
 	return len(d.Cards) - d.TopCard
+}
+
+func (c Card) IsHoldOn() bool { return c.Number == "1" && !c.Whot }
+
+func (c Card) IsPickTwo() bool { return c.Number == "2" && !c.Whot }
+
+func (c Card) IsPickThree() bool { return c.Number == "5" && !c.Whot }
+
+func (c Card) IsSuspension() bool { return c.Number == "8" && !c.Whot }
+
+func (c Card) IsSpecial() bool {
+	return c.IsHoldOn() || c.IsPickTwo() || c.IsPickThree() || c.IsSuspension()
 }

@@ -8,6 +8,7 @@ import (
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+// fillDeck creates cards for a specific suit with special card properties
 func fillDeck(deckCards []Card, index int, suit string, validSuitNumbers []int) int {
 	if len(validSuitNumbers) == 0 {
 		return index
@@ -16,11 +17,26 @@ func fillDeck(deckCards []Card, index int, suit string, validSuitNumbers []int) 
 		return index
 	}
 	for i, number := range validSuitNumbers {
-		deckCards[index+i] = Card{
+		card := Card{
 			Suit:   suit,
 			Number: fmt.Sprintf("%d", number),
 			Whot:   suit == SuitWhot,
+			Value:  number,
 		}
+
+		// Set special types based on card number
+		switch number {
+		case 1:
+			card.SpecialType = string(SpecialHoldOn)
+		case 2:
+			card.SpecialType = string(SpecialPickTwo)
+		case 5:
+			card.SpecialType = string(SpecialPickThree)
+		case 8:
+			card.SpecialType = string(SpecialSuspension)
+		}
+
+		deckCards[index+i] = card
 	}
 
 	return index + len(validSuitNumbers)
