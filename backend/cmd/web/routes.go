@@ -30,6 +30,6 @@ func (app *application) routes() http.Handler {
 	r.Post("/api/auth/login", app.loginUser)
 	r.Post("/api/room", app.createRoom)
 	r.Post("/api/room/join", app.joinRoom)
-
+	r.Post("/api/ws/{room_id}", app.serveWebsocket)
 	return r
 }

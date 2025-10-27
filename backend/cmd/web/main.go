@@ -15,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/pressly/goose/v3"
 	"playwhot.io/pkg/models/postgres"
+	"playwhot.io/pkg/ws"
 )
 
 type application struct {
@@ -30,6 +31,8 @@ type application struct {
 	rooms interface {
 		Create(int) (int, error)
 	}
+
+	hub *ws.Hub
 }
 
 var sessionManager *scs.SessionManager
@@ -90,7 +93,10 @@ func main() {
 		version:     os.Getenv("API_VERSION"),
 		users:       &postgres.UserModel{DB: db},
 		rooms:       &postgres.RoomModel{DB: db},
+		hub:         ws.NewHub(),
 	}
+
+	go app.hub.Run()
 
 	infoLog.Printf("Listening to port %s", app.addr)
 	http.ListenAndServe(app.addr, sessionManager.LoadAndSave(app.routes()))

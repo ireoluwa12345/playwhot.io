@@ -8,7 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"playwhot.io/pkg/models"
+	"playwhot.io/pkg/ws"
 )
 
 var activeRooms = map[int]models.Room{}
@@ -167,6 +169,7 @@ func (app *application) joinRoom(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	//TODO: Change the 4 to preset maximum members of players in a room
 	if len(existingRoom.Members) >= 4 {
 		http.Error(w, "Room is full", http.StatusConflict)
 		return
@@ -183,4 +186,19 @@ func (app *application) joinRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (app *application) serveWebsocket(w http.ResponseWriter, r *http.Request) {
+	var roomID interface{}
+	roomID = chi.URLParam(r, "room_id")
+
+	_, ok := activeRooms[roomID.(int)]
+
+	if !ok {
+		app.errorLog.Fatalln("room doesn't exist")
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	ws.ServeWs(app.hub, w, r)
 }
