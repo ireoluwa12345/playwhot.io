@@ -8,19 +8,14 @@ type RoomModel struct {
 	DB *sql.DB
 }
 
-func (r *RoomModel) Create(user_id int) (int, error) {
-	stmt := "INSERT INTO rooms (created_by) values ($1)"
-	result, err := r.DB.Exec(stmt, user_id)
+func (r *RoomModel) Create(user_id int, name string, maxPlayers int, isPrivate bool, password string) (int, error) {
+	stmt := "INSERT INTO rooms (created_by, name, max_players, is_private, password) values ($1, $2, $3, $4, $5) RETURNING room_id"
+	var roomId int
+	err := r.DB.QueryRow(stmt, user_id, name, maxPlayers, isPrivate, password).Scan(&roomId)
 
 	if err != nil {
 		return 0, err
 	}
 
-	room_id, err := result.LastInsertId()
-
-	if err != nil {
-		return 0, err
-	}
-
-	return int(room_id), nil
+	return roomId, nil
 }

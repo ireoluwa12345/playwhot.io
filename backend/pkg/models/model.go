@@ -18,9 +18,18 @@ type User struct {
 	Password string `json:"password"`
 }
 
+type PlayerData struct {
+	ID       int
+	Username string
+}
+
 type Room struct {
-	ID        int       `json:"room_id"`
-	CreatedBy int       `json:"user_id"`
-	Timestamp time.Time `json:"-"`
-	Members   []int
+	ID         int          `json:"room_id"`
+	Name       string       `json:"name"`
+	CreatedBy  int          `json:"user_id"`
+	Timestamp  time.Time    `json:"-"`
+	Players    []PlayerData `json:"players"`
+	MaxPlayers int          `json:"max_players"`
+	Password   string       `json:"room_password"`
+	IsPrivate  bool         `json:"is_private"`
 }

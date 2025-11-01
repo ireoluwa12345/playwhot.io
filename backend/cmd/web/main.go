@@ -29,7 +29,7 @@ type application struct {
 		Authenticate(string, string) (int, string, error)
 	}
 	rooms interface {
-		Create(int) (int, error)
+		Create(int, string, int, bool, string) (int, error)
 	}
 
 	hub *ws.Hub
@@ -55,6 +55,8 @@ func main() {
 	sessionManager.Cookie.Persist = true
 	sessionManager.Cookie.SameSite = http.SameSiteLaxMode
 	sessionManager.Cookie.Secure = false // Set to true in production with HTTP
+	sessionManager.Cookie.HttpOnly = true
+	sessionManager.Cookie.Path = "/"
 
 	dsn := os.Getenv("DB_DSN")
 	if dsn == "" {
@@ -66,6 +68,7 @@ func main() {
 			errorLog.Fatalf("failed to open db for migrations: %v", err)
 		}
 
+		// Added in attempt to reduce workload on the database
 		db.SetMaxOpenConns(50)
 		db.SetMaxIdleConns(50)
 		db.SetConnMaxLifetime(10 * time.Minute)

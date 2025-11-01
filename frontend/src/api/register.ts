@@ -31,6 +31,7 @@ export function useRegister() {
     try {
       const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

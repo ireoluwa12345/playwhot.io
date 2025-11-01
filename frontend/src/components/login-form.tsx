@@ -28,7 +28,7 @@ export function LoginForm({
   const navigate = useNavigate();
 
     useEffect(() => {
-      if (data?.status === "success") {
+      if (data?.status === "success" && data.user) {
         setShowSuccessToast(true);
       }
     }, [data]);
@@ -148,7 +148,7 @@ export function LoginForm({
         isVisible={showSuccessToast}
         onClose={() => {
           setShowSuccessToast(false);
-          navigate("/login");
+          navigate("/home");
         }}
         duration={3000}
         type="success"

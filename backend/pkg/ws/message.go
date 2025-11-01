@@ -76,3 +76,78 @@ func (r *MessageRouter) Route(client *Client, message *Message) error {
 	}
 	return handler(client, message)
 }
+
+func handleJoin(client *Client, message *Message) error {
+	payload, ok := message.Payload.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid join payload")
+	}
+
+	roomID, ok := payload["room_id"].(string)
+	if !ok {
+		return fmt.Errorf("room_id required")
+	}
+
+	client.hub.JoinRoom(client, roomID)
+
+	response := &Message{
+		Type:    MessageTypePlayerUpdate,
+		Payload: map[string]interface{}{"status": "joined", "room_id": roomID},
+		RoomID:  roomID,
+	}
+
+	client.send <- client.hub.messageToBytes(response)
+	return nil
+}
+
+func handleCardPlay(client *Client, message *Message) error {
+	payload, ok := message.Payload.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid card_play payload")
+	}
+
+	cardID, ok := payload["card_id"].(string)
+	if !ok {
+		return fmt.Errorf("card_id required")
+	}
+
+	broadcastMsg := &Message{
+		Type: MessageTypeGameState,
+		Payload: map[string]interface{}{
+			"action":    "card_played",
+			"card_id":   cardID,
+			"player_id": client.UserID,
+		},
+		RoomID: client.RoomID,
+	}
+
+	client.hub.broadcast <- broadcastMsg
+	return nil
+}
+
+func handleDraw(client *Client, message *Message) error {
+	payload, ok := message.Payload.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid draw payload")
+	}
+
+	count := 1
+	if countVal, exists := payload["count"]; exists {
+		if c, ok := countVal.(float64); ok {
+			count = int(c)
+		}
+	}
+
+	broadcastMsg := &Message{
+		Type: MessageTypeGameState,
+		Payload: map[string]interface{}{
+			"action":    "cards_drawn",
+			"count":     count,
+			"player_id": client.UserID,
+		},
+		RoomID: client.RoomID,
+	}
+
+	client.hub.broadcast <- broadcastMsg
+	return nil
+}

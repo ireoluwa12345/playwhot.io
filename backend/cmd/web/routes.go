@@ -13,8 +13,9 @@ func (app *application) routes() http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "Origin", "Cache-Control", "X-Requested-With"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -29,7 +30,5 @@ func (app *application) routes() http.Handler {
 	r.Post("/api/auth/register", app.registerUser)
 	r.Post("/api/auth/login", app.loginUser)
 	r.Post("/api/room", app.createRoom)
-	r.Post("/api/room/join", app.joinRoom)
-	r.Post("/api/ws/{room_id}", app.serveWebsocket)
 	return r
 }

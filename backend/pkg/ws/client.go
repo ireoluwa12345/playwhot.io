@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -10,15 +10,10 @@ import (
 )
 
 const (
-	writeWait      = 10 * time.Second
-	pongWait       = 60 * time.Second
+	writeWait      = 30 * time.Second
+	pongWait       = 120 * time.Second
 	pingPeriod     = (pongWait * 9) / 10
 	maxMessageSize = 512
-)
-
-var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
 )
 
 var upgrader = websocket.Upgrader{
@@ -27,9 +22,11 @@ var upgrader = websocket.Upgrader{
 }
 
 type Client struct {
-	hub  *Hub
-	conn *websocket.Conn
-	send chan []byte
+	hub    *Hub
+	conn   *websocket.Conn
+	send   chan []byte
+	UserID string
+	RoomID string
 }
 
 func (c *Client) readPump() {
@@ -41,15 +38,38 @@ func (c *Client) readPump() {
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.conn.ReadMessage()
+		_, messageBytes, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.broadcast <- message
+
+		var message Message
+		if err := json.Unmarshal(messageBytes, &message); err != nil {
+			log.Printf("error unmarshaling message: %v", err)
+			continue
+		}
+
+		message.UserID = c.UserID
+		message.RoomID = c.RoomID
+
+		// Route the message
+		if err := c.hub.router.Route(c, &message); err != nil {
+			// Send error back to client
+			errorMsg := &Message{
+				Type: MessageTypeError,
+				Payload: ErrorPayload{
+					Code:    "routing_error",
+					Message: err.Error(),
+				},
+			}
+			select {
+			case c.send <- c.hub.messageToBytes(errorMsg):
+			default:
+			}
+		}
 	}
 }
 
@@ -74,9 +94,9 @@ func (c *Client) writePump() {
 			}
 			w.Write(message)
 
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
+			// Flush any queued messages
+			for len(c.send) > 0 {
+				w.Write([]byte("\n"))
 				w.Write(<-c.send)
 			}
 
@@ -92,14 +112,25 @@ func (c *Client) writePump() {
 	}
 }
 
-func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func ServeWs(hub *Hub, userID, roomID string, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{
+		hub:    hub,
+		conn:   conn,
+		send:   make(chan []byte, 256),
+		UserID: userID,
+		RoomID: roomID,
+	}
 	client.hub.register <- client
+
+	// Auto-join room if roomID is provided
+	if roomID != "" {
+		hub.JoinRoom(client, roomID)
+	}
 
 	go client.writePump()
 	go client.readPump()

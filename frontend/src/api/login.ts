@@ -6,7 +6,7 @@ interface LoginData {
 }
 
 interface User {
-  id: string;
+  id: string | number;
   email: string;
   username: string;
 }
@@ -15,6 +15,7 @@ interface LoginResponse {
   status: string;
   message?: string;
   user?: User;
+  token?: string;
 }
 
 export function UseLogin() {
@@ -32,6 +33,7 @@ export function UseLogin() {
     try {
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -46,7 +48,6 @@ export function UseLogin() {
       if (!response.ok) {
         throw new Error(result.message || 'Authentication failed');
       }
-
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

@@ -1,8 +1,14 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const Navbar: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    navigate("/");
+  };
+
   return (
     <nav className="w-full">
       <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -15,20 +21,46 @@ const Navbar: React.FC = () => {
           </div>
           <div className="flex space-x-4">
             <Link to="/">
-              <Button variant="ghost" className="text-white-800 hover:text-white-600">
+              <Button
+                variant="ghost"
+                className="text-white-800 hover:text-white-600"
+              >
                 Home
               </Button>
             </Link>
-            <Link to="/login">
-              <Button variant="ghost" className="text-white-800 hover:text-white-600">
-                Login
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="ghost" className="text-white-800 hover:text-white-600">
-                Register
-              </Button>
-            </Link>
+            {/* {isAuthenticated ? (
+              <>
+                <span className="flex items-center text-white-800">
+                  Welcome, {user?.username}
+                </span>
+                <Button
+                  variant="ghost"
+                  onClick={handleLogout}
+                  className="text-white-800 hover:text-white-600"
+                >
+                  Logout
+                </Button>
+              </>
+            ) : ( */}
+              <>
+                <Link to="/login">
+                  <Button
+                    variant="ghost"
+                    className="text-white-800 hover:text-white-600"
+                  >
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button
+                    variant="ghost"
+                    className="text-white-800 hover:text-white-600"
+                  >
+                    Register
+                  </Button>
+                </Link>
+              </>
+            {/* )} */}
           </div>
         </div>
       </div>
